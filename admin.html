@@ -85,7 +85,10 @@
   <label><input type="checkbox" id="tLate"> Late Detection</label>
   <label><input type="checkbox" id="tBlock"> Block After Cutoff</label>
   <label><input type="time" id="lateTime" value="06:30"></label>
-
+  <label><input type="checkbox" id="tParentMsg"> Send Parent Message</label>
+<label><input type="checkbox" id="tAdviserMsg"> Send Adviser Report</label>
+<label><input type="checkbox" id="tMockMsg" checked> Mock Mode (Preview Only)</label>
+  
   <button onclick="saveSettings()">💾 Save Settings</button>
   <button onclick="clearLogs()">🗑️ Clear Logs</button>
 
@@ -234,6 +237,11 @@ function toMin(t){
   const [h,m]=t.split(":");
   return (+h)*60+(+m);
 }
+  let settings = JSON.parse(localStorage.getItem("settings")) || {
+  scanner:true, beep:true, duplicate:true,
+  time:true, late:false, block:false, lateTime:"06:30",
+  parentMsg:false, adviserMsg:false, mockMsg:true
+};
 </script>
 
 </body>
