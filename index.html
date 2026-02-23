@@ -7,42 +7,30 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-  body {
-    margin: 0;
-    background: #0b0b0b;
-    color: #00ffcc;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-  }
-
-  #reader {
-    width: 320px;
-    border: 3px solid #00ffcc;
-    border-radius: 12px;
-    box-shadow: 0 0 20px #00ffcc55;
-  }
-
-  #status {
-    margin-top: 15px;
-    font-size: 18px;
-    text-align: center;
-  }
-
-  .lrn {
-    font-size: 22px;
-    font-weight: bold;
-    color: #00ffaa;
-  }
-
-  .time {
-    font-size: 14px;
-    color: #aaffee;
-    margin-top: 5px;
-  }
+body{
+  margin:0;
+  background:#0b0b0b;
+  color:#00ffcc;
+  font-family:Arial,sans-serif;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+#reader{
+  width:320px;
+  border:3px solid #00ffcc;
+  border-radius:12px;
+  box-shadow:0 0 20px #00ffcc55;
+}
+#status{
+  margin-top:15px;
+  font-size:18px;
+  text-align:center;
+}
+.lrn{font-size:22px;font-weight:bold;color:#00ffaa}
+.time{font-size:14px;color:#aaffee;margin-top:5px}
 </style>
 </head>
 
@@ -54,59 +42,103 @@
 <div id="reader"></div>
 <div id="status">⏳ Waiting for scan...</div>
 
-  <audio id="beep" src="beep-07.wav" preload="auto"></audio>
+<audio id="beep" src="beep-07.wav" preload="auto"></audio>
+
 <script>
-  const statusDiv = document.getElementById("status");
-  const beep = document.getElementById("beep");
-  let scanner;
+/* ===============================
+   CONFIG
+================================ */
+const WEB_APP_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL";
 
-  function getCurrentDateTime() {
-    const now = new Date();
-    const date = now.toLocaleDateString();
-    const time = now.toLocaleTimeString();
-    return { date, time };
+/* ===============================
+   GLOBALS
+================================ */
+const statusDiv = document.getElementById("status");
+const beep = document.getElementById("beep");
+let scanner;
+let settings = {};
+
+/* ===============================
+   LOAD SETTINGS (FROM ADMIN)
+================================ */
+async function loadSettings(){
+  try{
+    const r = await fetch(WEB_APP_URL + "?mode=settings");
+    settings = await r.json();
+  }catch(e){
+    console.error("Settings load failed", e);
   }
+}
+loadSettings();
 
-  function onScanSuccess(decodedText) {
-    beep.play();
+/* ===============================
+   TIME UTILS
+================================ */
+function getNow(){
+  const n = new Date();
+  return {
+    date: n.toLocaleDateString(),
+    time: n.toLocaleTimeString(),
+    iso: n.toISOString(),
+    hour: n.getHours(),
+    minute: n.getMinutes()
+  };
+}
+function isLate(t){
+  if(!settings.late) return false;
+  const [h,m] = settings.lateTime.split(":").map(Number);
+  return t.hour > h || (t.hour === h && t.minute > m);
+}
 
-    const lrn = decodedText.trim();
-    const { date, time } = getCurrentDateTime();
+/* ===============================
+   SCAN SUCCESS
+================================ */
+async function onScanSuccess(decodedText){
+  beep.play();
 
-    statusDiv.innerHTML = `
-      ✅ SCANNED<br>
-      <span class="lrn">${lrn}</span>
-      <div class="time">📅 ${date} ⏰ ${time}</div>
-    `;
+  const lrn = decodedText.trim();
+  const t = getNow();
+  const late = isLate(t);
 
-    scanner.clear();
-    setTimeout(startScanner, 2000);
-  }
+  statusDiv.innerHTML = `
+    ✅ SCANNED<br>
+    <span class="lrn">${lrn}</span>
+    <div class="time">
+      📅 ${t.date} ⏰ ${t.time}<br>
+      ${late ? "🔴 LATE" : "🟢 ON TIME"}
+    </div>
+  `;
 
-  function startScanner() {
-    scanner = new Html5QrcodeScanner(
-      "reader",
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 120 },
-        rememberLastUsedCamera: true
-      },
-      false
-    );
-    scanner.render(onScanSuccess);
-  }
+  /* SEND TO GOOGLE SHEET */
+  fetch(WEB_APP_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      action:"log",
+      lrn:lrn,
+      date:t.date,
+      time:t.time,
+      status: late ? "Late" : "On Time",
+      settings: settings
+    })
+  }).catch(err=>console.error(err));
 
-  startScanner();
+  scanner.clear();
+  setTimeout(startScanner, 2000);
+}
 
-  fetch("YOUR_WEB_APP_URL_HERE", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    lrn: lrn,
-    settings: settings
-  })
-})
-  
+/* ===============================
+   START SCANNER
+================================ */
+function startScanner(){
+  scanner = new Html5QrcodeScanner(
+    "reader",
+    { fps:10, qrbox:{width:250,height:120}, rememberLastUsedCamera:true },
+    false
+  );
+  scanner.render(onScanSuccess);
+}
+startScanner();
 </script>
 
 </body>
