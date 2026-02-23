@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LRN Barcode Scanner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+  body {
+    margin: 0;
+    background: #0b0b0b;
+    color: #00ffcc;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  #reader {
+    width: 320px;
+    border: 3px solid #00ffcc;
+    border-radius: 12px;
+    box-shadow: 0 0 20px #00ffcc55;
+  }
+
+  #status {
+    margin-top: 15px;
+    font-size: 18px;
+    text-align: center;
+  }
+
+  .lrn {
+    font-size: 22px;
+    font-weight: bold;
+    color: #00ffaa;
+  }
+
+  .time {
+    font-size: 14px;
+    color: #aaffee;
+    margin-top: 5px;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>📊 Attendance Scanner</h2>
+<p>Scan <b>Code 128</b> (LRN)</p>
+
+<div id="reader"></div>
+<div id="status">⏳ Waiting for scan...</div>
+
+<audio id="beep">
+  <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg">
+</audio>
+
+<script>
+  const statusDiv = document.getElementById("status");
+  const beep = document.getElementById("beep");
+  let scanner;
+
+  function getCurrentDateTime() {
+    const now = new Date();
+    const date = now.toLocaleDateString();
+    const time = now.toLocaleTimeString();
+    return { date, time };
+  }
+
+  function onScanSuccess(decodedText) {
+    beep.play();
+
+    const lrn = decodedText.trim();
+    const { date, time } = getCurrentDateTime();
+
+    statusDiv.innerHTML = `
+      ✅ SCANNED<br>
+      <span class="lrn">${lrn}</span>
+      <div class="time">📅 ${date} ⏰ ${time}</div>
+    `;
+
+    scanner.clear();
+    setTimeout(startScanner, 2000);
+  }
+
+  function startScanner() {
+    scanner = new Html5QrcodeScanner(
+      "reader",
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 120 },
+        rememberLastUsedCamera: true
+      },
+      false
+    );
+    scanner.render(onScanSuccess);
+  }
+
+  startScanner();
+</script>
+
+</body>
+</html>
