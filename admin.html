@@ -2,64 +2,41 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title> Admin Panel</title>
+<title>Admin Panel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 *{box-sizing:border-box}
-
 body{
   margin:0;
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  font-family:'Segoe UI',sans-serif;
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
   height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
   color:white;
 }
-
-/* GLASS CARD */
 .card{
   width:95%;
   max-width:900px;
   padding:30px;
   border-radius:20px;
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(15px);
   border:1px solid rgba(255,255,255,0.2);
   box-shadow:0 0 40px rgba(0,255,255,0.3);
-  animation:fadeIn 0.6s ease;
 }
-
-@keyframes fadeIn{
-  from{opacity:0; transform:translateY(20px)}
-  to{opacity:1; transform:translateY(0)}
-}
-
-h2,h3,h4{
-  margin-top:0;
-  text-align:center;
-  letter-spacing:1px;
-}
-
+h2,h3,h4{text-align:center}
 input{
   width:90%;
   padding:12px;
   margin:8px;
   border:none;
   border-radius:10px;
-  background: rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.1);
   color:white;
-  outline:none;
-  transition:0.3s;
 }
-input:focus{
-  background: rgba(0,255,255,0.2);
-  box-shadow:0 0 10px #00ffff;
-}
-
 button{
   padding:10px 18px;
   border:none;
@@ -67,154 +44,106 @@ button{
   margin:8px;
   cursor:pointer;
   font-weight:bold;
-  transition:0.3s;
-  background: linear-gradient(45deg,#00ffff,#00aaff);
-  color:#000;
+  background:linear-gradient(45deg,#00ffff,#00aaff);
 }
-button:hover{
-  transform:translateY(-2px);
-  box-shadow:0 0 15px #00ffff;
-}
-
-label{
-  display:block;
-  margin:8px;
-  font-size:14px;
-}
-
-input[type="checkbox"]{
-  width:auto;
-  margin-right:8px;
-}
-
-/* TABLE */
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:15px;
-  font-size:13px;
-}
-
-th,td{
-  padding:8px;
-  text-align:center;
-}
-
-th{
-  background: rgba(0,255,255,0.2);
-}
-
-tr:nth-child(even){
-  background: rgba(255,255,255,0.05);
-}
-
+label{display:block;margin:8px}
 .hidden{display:none}
-
-.logout-btn{
-  background: linear-gradient(45deg,#ff4d4d,#ff0000);
-  color:white;
-}
-
+.logout-btn{background:linear-gradient(45deg,#ff4d4d,#ff0000);color:white}
 </style>
 </head>
 
 <body>
-
 <div class="card">
 
-<h2>🔐 PBNHS BARCODE ADMIN PANEL </h2>
+<h2>🔐 PBNHS BARCODE ADMIN PANEL</h2>
 
 <!-- LOGIN -->
 <div id="loginView">
   <h3>Admin Login</h3>
-  <input id="username" placeholder="Username"><br>
-  <input id="password" type="password" placeholder="Password"><br>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
   <button onclick="login()">Login</button>
   <p id="loginMsg"></p>
 </div>
 
 <!-- ADMIN -->
 <div id="adminView" class="hidden">
-  <h3>⚙️ System Controls</h3>
   <button class="logout-btn" onclick="logout()">Logout</button>
+
+  <h3>⚙️ System Controls</h3>
 
   <h4>Tools</h4>
   <label><input type="checkbox" id="tDuplicate"> Duplicate Check</label>
   <label><input type="checkbox" id="tTime"> Time Recorder</label>
   <label><input type="checkbox" id="tLate"> Late Detection</label>
   <label><input type="checkbox" id="tBlock"> Block After Cutoff</label>
-  <label>Late Time: <input type="time" id="lateTime"></label>
+  <label>Late Time <input type="time" id="lateTime"></label>
 
   <h4>Messaging</h4>
-  <label><input type="checkbox" id="tParentMsg"> Send Parent Message</label>
-  <label><input type="checkbox" id="tAdviserMsg"> Send Adviser Report</label>
+  <label><input type="checkbox" id="tParentMsg"> Parent Message</label>
+  <label><input type="checkbox" id="tAdviserMsg"> Adviser Report</label>
   <label><input type="checkbox" id="tMockMsg"> Mock Mode</label>
 
-  <button onclick="saveSettings()">💾 Save Settings</button>
+  <button onclick="saveSettings()">💾 Save & Sync</button>
   <button onclick="clearLogs()">🗑 Clear Logs</button>
 
-  <h4>📋 Logs</h4>
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>LRN</th>
-        <th>Date</th>
-        <th>Time</th>
-        <th>Status</th>
-        <th>Message</th>
-      </tr>
-    </thead>
-    <tbody id="logTable"></tbody>
-  </table>
+  <p id="statusMsg"></p>
 </div>
 
 </div>
 
 <script>
+/* ===============================
+   CONFIG
+================================ */
+const WEB_APP_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL";
+
+/* ===============================
+   ADMINS
+================================ */
 const ADMINS=[
   {user:"admin",pass:"PNBARC@DE"},
   {user:"principal",pass:"PNB2026"},
   {user:"itadmin",pass:"IT@PNB"}
 ];
 
-let settings=JSON.parse(localStorage.getItem("settings"))||{
-  duplicate:true,time:true,late:false,block:false,
-  lateTime:"06:30",parentMsg:false,adviserMsg:false,mockMsg:true
-};
-
-let logs=JSON.parse(localStorage.getItem("logs")||"[]");
-
-function save(){
-  localStorage.setItem("settings",JSON.stringify(settings));
-  localStorage.setItem("logs",JSON.stringify(logs));
-}
-
+/* ===============================
+   LOGIN
+================================ */
 function login(){
   const u=username.value,p=password.value;
   if(ADMINS.find(a=>a.user===u&&a.pass===p)){
     loginView.classList.add("hidden");
     adminView.classList.remove("hidden");
     loadSettings();
-    loadLogs();
-  }else loginMsg.innerText="❌ Invalid login";
+  }else{
+    loginMsg.innerText="❌ Invalid login";
+  }
 }
-
 function logout(){location.reload();}
 
-function loadSettings(){
-  tDuplicate.checked=settings.duplicate;
-  tTime.checked=settings.time;
-  tLate.checked=settings.late;
-  tBlock.checked=settings.block;
-  lateTime.value=settings.lateTime;
-  tParentMsg.checked=settings.parentMsg;
-  tAdviserMsg.checked=settings.adviserMsg;
-  tMockMsg.checked=settings.mockMsg;
+/* ===============================
+   LOAD SETTINGS (FROM SHEET)
+================================ */
+async function loadSettings(){
+  const r=await fetch(WEB_APP_URL+"?mode=settings");
+  const s=await r.json();
+
+  tDuplicate.checked=s.duplicate;
+  tTime.checked=s.time;
+  tLate.checked=s.late;
+  tBlock.checked=s.block;
+  lateTime.value=s.lateTime;
+  tParentMsg.checked=s.parentMsg;
+  tAdviserMsg.checked=s.adviserMsg;
+  tMockMsg.checked=s.mockMsg;
 }
 
+/* ===============================
+   SAVE SETTINGS (TO SHEET)
+================================ */
 function saveSettings(){
-  settings={
+  const settings={
     duplicate:tDuplicate.checked,
     time:tTime.checked,
     late:tLate.checked,
@@ -224,30 +153,30 @@ function saveSettings(){
     adviserMsg:tAdviserMsg.checked,
     mockMsg:tMockMsg.checked
   };
-  save();
-  alert("✅ Settings Saved");
-}
 
-function loadLogs(){
-  logTable.innerHTML="";
-  logs.forEach((l,i)=>{
-    logTable.innerHTML+=`
-    <tr>
-      <td>${i+1}</td>
-      <td>${l.lrn||"-"}</td>
-      <td>${l.date||"-"}</td>
-      <td>${l.time||"-"}</td>
-      <td>${l.status||"-"}</td>
-      <td>${l.msg||"-"}</td>
-    </tr>`;
+  fetch(WEB_APP_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      action:"updateSettings",
+      settings:settings
+    })
   });
+
+  statusMsg.innerText="✅ Settings synced system-wide";
 }
 
+/* ===============================
+   CLEAR LOGS
+================================ */
 function clearLogs(){
   if(confirm("Clear all logs?")){
-    logs=[];
-    save();
-    loadLogs();
+    fetch(WEB_APP_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"clearLogs"})
+    });
+    statusMsg.innerText="🗑 Logs cleared";
   }
 }
 </script>
