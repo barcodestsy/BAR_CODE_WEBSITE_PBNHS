@@ -119,18 +119,20 @@ async function onScanSuccess(decodedText){
 
   /* SEND TO GOOGLE SHEET */
   try{
-    const res = await fetch(WEB_APP_URL,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({
-        action:"scan",
-        lrn: lrn,
-        date: t.date,
-        time: t.time,
-        status: late ? "Late" : "On Time"
-      })
-    });
-
+    const res = awaitfetch(WEB_APP_URL, {
+  method: "POST",
+  mode: "no-cors",   // ✅ CORS FIX
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    action: "log",   // ✅ DAPAT "log"
+    lrn: lrn,
+    date: t.date,
+    time: t.time,
+    status: late ? "Late" : "On Time"
+  })
+});
     const r = await res.json();
 
     if(!r.success){
