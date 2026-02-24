@@ -133,24 +133,29 @@ function logout(){
 /* ===============================
    LOAD SETTINGS FROM SHEET
 ================================ */
-async function loadSettings(){
-  statusMsg.innerText="Loading settings...";
 
-  try{
-    const r = await fetch(WEB_APP_URL+"?mode=settings");
+ async function loadSettings(){
+  statusMsg.innerText = "Loading settings...";
+
+  try {
+    const r = await fetch(WEB_APP_URL + "?mode=settings");
     const s = await r.json();
 
-    for(const k in s){
+    for (const k in s) {
       const el = document.getElementById(k);
-      if(!el) continue;
-      if(el.type==="checkbox") el.checked = s[k] === true;
-      else el.value = s[k];
+      if (!el) continue;
+
+      if (el.type === "checkbox") {
+        el.checked = s[k] === true;
+      } else {
+        el.value = s[k];
+      }
     }
 
-    statusMsg.innerText="✅ Settings loaded";
+    statusMsg.innerText = "✅ Settings loaded";
 
-  }catch(e){
-    statusMsg.innerText="❌ Cannot load settings";
+  } catch (e) {
+    statusMsg.innerText = "❌ Cannot load settings";
     console.error(e);
   }
 }
