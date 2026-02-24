@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #06090f;
+    --surface: #0e1420;
+    --card: #111827;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --orange: #f97316;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --sidebar-w: 240px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    flex-direction: column;
+  }
+
+  .login-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    width: 360px;
+    text-align: center;
+  }
+
+  .login-box h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .login-box p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .login-box input {
+    width: 100%;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: 4px;
+    outline: none;
+    margin-bottom: 14px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+
+  .login-box input:focus { border-color: var(--accent); }
+
+  .login-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 10px;
+    color: white; font-family: 'Sora', sans-serif;
+    font-size: 14px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+
+  .login-btn:hover { opacity: 0.9; }
+
+  .login-error {
+    margin-top: 12px;
+    color: var(--red);
+    font-size: 13px;
+    display: none;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 10;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sidebar-logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .sidebar-logo-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .sidebar-logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 1px;
+    font-family: 'Sora', sans-serif;
+    -webkit-text-fill-color: var(--muted);
+  }
+
+  nav { padding: 16px 12px; flex: 1; }
+
+  .nav-section {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 8px 6px;
+    margin-top: 8px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    user-select: none;
+  }
+
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .nav-item.active { background: rgba(0,212,255,0.1); color: var(--accent); }
+  .nav-item.danger:hover { background: rgba(239,68,68,0.1); color: var(--red); }
+
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* MAIN CONTENT */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 28px;
+    min-height: 100vh;
+  }
+
+  .page-header {
+    margin-bottom: 28px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .page-header p {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* STATS GRID */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .stat-card.blue::before { background: var(--accent); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.red::before { background: var(--red); }
+  .stat-card.purple::before { background: var(--accent2); }
+
+  .stat-icon { font-size: 24px; margin-bottom: 10px; }
+
+  .stat-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-card.blue .stat-value { color: var(--accent); }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.red .stat-value { color: var(--red); }
+  .stat-card.purple .stat-value { color: var(--accent2); }
+
+  .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* CONTROLS GRID */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .control-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+  }
+
+  .control-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .control-title {
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .control-desc { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+
+  /* Toggle Switch */
+  .toggle {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 13px;
+    transition: background 0.2s;
+  }
+
+  .toggle input:checked + .toggle-track { background: var(--green); }
+
+  .toggle-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 20px; height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(22px); }
+
+  /* Time input */
+  .time-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .time-input-row input {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    color: var(--text);
+    outline: none;
+    width: 110px;
+    transition: border-color 0.2s;
+  }
+
+  .time-input-row input:focus { border-color: var(--accent); }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn-primary:hover { box-shadow: 0 4px 12px rgba(0,212,255,0.3); }
+
+  .btn-success { background: var(--green); color: white; }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-danger:hover { box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+
+  .btn-warning { background: var(--yellow); color: var(--bg); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Lockdown Banner */
+  #lockdown-banner {
+    background: rgba(239,68,68,0.15);
+    border: 1px solid var(--red);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    animation: flashBorder 1.5s infinite;
+  }
+
+  @keyframes flashBorder {
+    0%, 100% { border-color: var(--red); }
+    50% { border-color: transparent; }
+  }
+
+  #lockdown-banner.active { display: flex; }
+
+  .lockdown-icon { font-size: 24px; }
+  .lockdown-text { flex: 1; font-weight: 600; color: var(--red); }
+  .lockdown-sub { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+  /* Attendance Table */
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .table-toolbar {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .table-toolbar h3 { font-size: 14px; font-weight: 600; flex: 1; }
+
+  .date-filter {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    background: var(--surface);
+    padding: 12px 16px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    font-weight: 600;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
+  .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    max-width: 340px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+  }
+
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.error { border-color: var(--red); color: var(--red); }
+  #toast.warning { border-color: var(--yellow); color: var(--yellow); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .refresh-btn {
+    font-size: 18px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.15s;
+  }
+
+  .refresh-btn:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-screen">
+  <div class="login-box">
+    <div style="font-size:40px;margin-bottom:12px;">🔐</div>
+    <h2>Admin Access</h2>
+    <p>Enter password to access the Admin Panel</p>
+    <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Unlock Panel</button>
+    <div class="login-error" id="login-error">❌ Incorrect password</div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">📡</div>
+    <div>
+      <div class="sidebar-logo-text">ATTEND</div>
+      <div class="sidebar-logo-sub">Admin Panel</div>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPanel('dashboard', this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+
+    <div class="nav-section">Controls</div>
+    <div class="nav-item" onclick="showPanel('settings', this)">
+      <span class="nav-icon">⚙️</span> System Settings
+    </div>
+    <div class="nav-item" onclick="showPanel('attendance', this)">
+      <span class="nav-icon">📋</span> Attendance Records
+    </div>
+    <div class="nav-item" onclick="showPanel('export', this)">
+      <span class="nav-icon">📥</span> Export Data
+    </div>
+
+    <div class="nav-section">Danger Zone</div>
+    <div class="nav-item danger" onclick="showPanel('lockdown', this)">
+      <span class="nav-icon">🔒</span> Emergency Lockdown
+    </div>
+  </nav>
+  <div class="sidebar-footer">v1.0 · Attendance System</div>
+</div>
+
+<!-- Main Content -->
+<div class="main" id="main-content" style="display:none">
+
+  <!-- DASHBOARD PANEL -->
+  <div class="panel active" id="panel-dashboard">
+    <div class="page-header">
+      <h1>📊 Live Dashboard</h1>
+      <p>Real-time attendance overview for today</p>
+    </div>
+
+    <div id="lockdown-banner" class="lockdown-banner">
+      <span class="lockdown-icon">🚨</span>
+      <div class="lockdown-text">
+        EMERGENCY LOCKDOWN ACTIVE
+        <div class="lockdown-sub">Scanner, SMS, and Email notifications are disabled</div>
+      </div>
+      <button class="btn btn-success" onclick="liftLockdown()">Lift Lockdown</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-label">Total Present</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="stat-ontime">—</div>
+        <div class="stat-label">On-Time</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-value" id="stat-late">—</div>
+        <div class="stat-label">Late</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">📡</div>
+        <div class="stat-value" id="stat-scans">—</div>
+        <div class="stat-label">Total Scans</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="loadDashboard()">🔄 Refresh</button>
+      <button class="btn btn-outline" onclick="showPanel('attendance', document.querySelector('.nav-item:nth-child(5)'))">View Records →</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel" id="panel-settings">
+    <div class="page-header">
+      <h1>⚙️ System Settings</h1>
+      <p>Configure notifications, scanner, and attendance timing</p>
+    </div>
+
+    <div class="controls-grid">
+      <!-- SMS Toggle -->
+      <div class="control-card">
+        <div class="control-header">
+          <div class="control-title">📱 SMS Notifications</div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-sms" onchange="toggleSetting('SMS', this.checked)">
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="control-desc">Send automated SMS to parents when their child arrives. Requires Semaphore API key.</div>
+      </div>
+
+      <!-- Email Toggle -->
+      <div class="control-card">
+        <div class="control-header">
+          <div class="control-title">📧 Email Notifications</div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-email" onchange="toggleSetting('EMAIL', this.checked)">
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="control-desc">Send attendance email to class advisers. Uses the Gmail account running this script.</div>
+      </div>
+
+      <!-- Scanner Toggle -->
+      <div class="control-card">
+        <div class="control-header">
+          <div class="control-title">📷 Barcode Scanner</div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-scanner" onchange="toggleSetting('SCANNER', this.checked)">
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="control-desc">Globally enable or disable the scanner. When OFF, no scans will be accepted.</div>
+      </div>
+
+      <!-- Late Time -->
+      <div class="control-card">
+        <div class="control-title" style="margin-bottom:8px;">⏰ Late Cutoff Time</div>
+        <div class="control-desc">Students arriving after this time are marked Late.</div>
+        <div class="time-input-row">
+          <input type="time" id="late-time-input" value="07:30">
+          <button class="btn btn-primary" onclick="saveLateTime()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset Today -->
+    <div class="control-card" style="border-color:rgba(239,68,68,0.3)">
+      <div class="control-title" style="margin-bottom:6px;color:var(--red)">🗑️ Reset Today's Attendance</div>
+      <div class="control-desc" style="margin-bottom:14px;">Permanently delete all attendance records for today. This cannot be undone.</div>
+      <button class="btn btn-danger" onclick="confirmReset()">Reset Today's Records</button>
+    </div>
+  </div>
+
+  <!-- ATTENDANCE PANEL -->
+  <div class="panel" id="panel-attendance">
+    <div class="page-header">
+      <h1>📋 Attendance Records</h1>
+      <p>View and filter attendance logs</p>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <h3>Records</h3>
+        <input type="date" class="date-filter" id="att-date-filter" onchange="loadAttendance()">
+        <button class="refresh-btn" onclick="loadAttendance()">↻</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Section</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Log</th>
+            </tr>
+          </thead>
+          <tbody id="att-table-body">
+            <tr><td colspan="7" class="empty-state">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT PANEL -->
+  <div class="panel" id="panel-export">
+    <div class="page-header">
+      <h1>📥 Export Data</h1>
+      <p>Download attendance records as CSV</p>
+    </div>
+    <div class="controls-grid">
+      <div class="control-card">
+        <div class="control-title" style="margin-bottom:8px;">📅 Date Range Export</div>
+        <div class="control-desc" style="margin-bottom:14px;">Select a date range to export specific records.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">From</label>
+            <input type="date" class="date-filter" id="export-start" style="width:100%;margin-top:4px;display:block">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">To</label>
+            <input type="date" class="date-filter" id="export-end" style="width:100%;margin-top:4px;display:block">
+          </div>
+          <button class="btn btn-primary" onclick="exportCSV(false)">⬇ Export Date Range</button>
+        </div>
+      </div>
+      <div class="control-card">
+        <div class="control-title" style="margin-bottom:8px;">📦 Full Export</div>
+        <div class="control-desc" style="margin-bottom:14px;">Export all attendance records from the entire year.</div>
+        <button class="btn btn-outline" onclick="exportCSV(true)">⬇ Export All Records</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOCKDOWN PANEL -->
+  <div class="panel" id="panel-lockdown">
+    <div class="page-header">
+      <h1>🔒 Emergency Controls</h1>
+      <p>Use with caution — affects the entire system</p>
+    </div>
+    <div style="max-width:500px">
+      <div class="control-card" style="border-color:rgba(239,68,68,0.4);margin-bottom:16px">
+        <div class="control-title" style="color:var(--red);margin-bottom:6px;font-size:16px">🚨 Emergency Lockdown</div>
+        <div class="control-desc" style="margin-bottom:16px">
+          Immediately disables the Scanner, SMS, and Email notifications. Use during system issues or security concerns.
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-danger" onclick="activateLockdown()">🔒 Activate Lockdown</button>
+          <button class="btn btn-success" onclick="liftLockdown()">✅ Lift Lockdown</button>
+        </div>
+      </div>
+
+      <div class="control-card" style="border-color:rgba(245,158,11,0.4)">
+        <div class="control-title" style="color:var(--yellow);margin-bottom:6px;">🔑 Change Admin Password</div>
+        <div class="control-desc" style="margin-bottom:14px">Update your admin panel password.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:300px">
+          <input type="password" id="old-pass" placeholder="Current password" class="date-filter" style="width:100%;padding:10px 12px">
+          <input type="password" id="new-pass" placeholder="New password" class="date-filter" style="width:100%;padding:10px 12px">
+          <input type="password" id="confirm-pass" placeholder="Confirm new password" class="date-filter" style="width:100%;padding:10px 12px">
+          <button class="btn btn-warning" onclick="doChangePassword()">Update Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end main -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  var isAuthenticated = false;
+  var currentSettings = {};
+
+  // =====================
+  // LOGIN
+  // =====================
+  function doLogin() {
+    var pass = document.getElementById('login-pass').value;
+    google.script.run
+      .withSuccessHandler(function(ok) {
+        if (ok) {
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('main-content').style.display = 'flex';
+          isAuthenticated = true;
+          loadDashboard();
+          loadSettings();
+        } else {
+          document.getElementById('login-error').style.display = 'block';
+        }
+      })
+      .verifyAdminPassword(pass);
+  }
+
+  document.getElementById('login-pass').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  // =====================
+  // NAVIGATION
+  // =====================
+  function showPanel(name, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    if (el) el.classList.add('active');
+
+    if (name === 'dashboard') loadDashboard();
+    if (name === 'attendance') { setTodayDate(); loadAttendance(); }
+    if (name === 'settings') loadSettings();
+  }
+
+  function setTodayDate() {
+    var today = new Date();
+    var y = today.getFullYear();
+    var m = String(today.getMonth()+1).padStart(2,'0');
+    var d = String(today.getDate()).padStart(2,'0');
+    document.getElementById('att-date-filter').value = y + '-' + m + '-' + d;
+  }
+
+  // =====================
+  // DASHBOARD
+  // =====================
+  function loadDashboard() {
+    google.script.run
+      .withSuccessHandler(function(counts) {
+        document.getElementById('stat-total').textContent = counts.present;
+        document.getElementById('stat-ontime').textContent = counts.onTime;
+        document.getElementById('stat-late').textContent = counts.late;
+        document.getElementById('stat-scans').textContent = counts.totalScans;
+      })
+      .getDashboardCounts();
+
+    // Check lockdown
+    google.script.run
+      .withSuccessHandler(function(settings) {
+        var banner = document.getElementById('lockdown-banner');
+        if (settings.SCANNER === 'OFF' && settings.SMS === 'OFF' && settings.EMAIL === 'OFF') {
+          banner.classList.add('active');
+        } else {
+          banner.classList.remove('active');
+        }
+      })
+      .getSystemSettings();
+  }
+
+  // Auto-refresh dashboard every 30s
+  setInterval(function() {
+    if (isAuthenticated) loadDashboard();
+  }, 30000);
+
+  // =====================
+  // SETTINGS
+  // =====================
+  function loadSettings() {
+    google.script.run
+      .withSuccessHandler(function(settings) {
+        currentSettings = settings;
+        document.getElementById('toggle-sms').checked = settings.SMS === 'ON';
+        document.getElementById('toggle-email').checked = settings.EMAIL === 'ON';
+        document.getElementById('toggle-scanner').checked = settings.SCANNER === 'ON';
+        document.getElementById('late-time-input').value = settings.LATE_TIME || '07:30';
+      })
+      .getSystemSettings();
+  }
+
+  function toggleSetting(key, enabled) {
+    var value = enabled ? 'ON' : 'OFF';
+    google.script.run
+      .withSuccessHandler(function(res) {
+        showToast(res.message, 'success');
+      })
+      .updateSystemSettings(key, value);
+  }
+
+  function saveLateTime() {
+    var val = document.getElementById('late-time-input').value;
+    if (!val) { showToast('Please enter a valid time.', 'error'); return; }
+    google.script.run
+      .withSuccessHandler(function(res) { showToast('Late cutoff set to ' + val, 'success'); })
+      .updateSystemSettings('LATE_TIME', val);
+  }
+
+  function confirmReset() {
+    if (confirm('⚠️ Are you sure you want to delete ALL attendance records for today? This cannot be undone.')) {
+      google.script.run
+        .withSuccessHandler(function(res) { showToast(res.message, res.success ? 'success' : 'error'); })
+        .resetTodayAttendance();
+    }
+  }
+
+  // =====================
+  // ATTENDANCE TABLE
+  // =====================
+  function loadAttendance() {
+    var filterDate = document.getElementById('att-date-filter').value;
+    var tbody = document.getElementById('att-table-body');
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function(records) {
+        if (!records.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No records found for this date.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = records.map(function(r, i) {
+          var badgeClass = r.status === 'On-time' ? 'badge-green' : 'badge-red';
+          return '<tr>' +
+            '<td style="color:var(--muted)">' + (i+1) + '</td>' +
+            '<td style="font-weight:600">' + r.name + '</td>' +
+            '<td>' + r.section + '</td>' +
+            '<td style="font-family:Space Mono,monospace;font-size:12px">' + r.date + '</td>' +
+            '<td style="font-family:Space Mono,monospace;font-size:12px">' + r.time + '</td>' +
+            '<td><span class="badge ' + badgeClass + '">' + r.status + '</span></td>' +
+            '<td style="color:var(--muted);font-size:12px">' + r.log + '</td>' +
+            '</tr>';
+        }).join('');
+      })
+      .getAttendanceRecords(filterDate);
+  }
+
+  // =====================
+  // EXPORT
+  // =====================
+  function exportCSV(all) {
+    var startDate = all ? '' : document.getElementById('export-start').value;
+    var endDate = all ? '' : document.getElementById('export-end').value;
+
+    if (!all && (!startDate || !endDate)) {
+      showToast('Please select both start and end dates.', 'error');
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(csv) {
+        if (!csv) { showToast('No data to export.', 'warning'); return; }
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'attendance_' + (all ? 'all' : startDate + '_to_' + endDate) + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Export downloaded!', 'success');
+      })
+      .exportAttendanceCSV(startDate, endDate);
+  }
+
+  // =====================
+  // LOCKDOWN
+  // =====================
+  function activateLockdown() {
+    if (!confirm('🚨 Activate Emergency Lockdown? This will disable Scanner, SMS, and Email immediately.')) return;
+    google.script.run
+      .withSuccessHandler(function(res) {
+        showToast(res.message, 'error');
+        loadDashboard();
+        loadSettings();
+      })
+      .emergencyLockdown();
+  }
+
+  function liftLockdown() {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        showToast(res.message, 'success');
+        loadDashboard();
+        loadSettings();
+      })
+      .liftLockdown();
+  }
+
+  function doChangePassword() {
+    var oldP = document.getElementById('old-pass').value;
+    var newP = document.getElementById('new-pass').value;
+    var confP = document.getElementById('confirm-pass').value;
+    if (!oldP || !newP) { showToast('Please fill in all fields.', 'error'); return; }
+    if (newP !== confP) { showToast('New passwords do not match.', 'error'); return; }
+    if (newP.length < 6) { showToast('Password must be at least 6 characters.', 'error'); return; }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        showToast(res.message, res.success ? 'success' : 'error');
+        if (res.success) {
+          document.getElementById('old-pass').value = '';
+          document.getElementById('new-pass').value = '';
+          document.getElementById('confirm-pass').value = '';
+        }
+      })
+      .changeAdminPassword(oldP, newP);
+  }
+
+  // =====================
+  // TOAST
+  // =====================
+  var toastTimer;
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.className = '';
+    t.textContent = msg;
+    t.classList.add('show');
+    if (type) t.classList.add(type);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { t.classList.remove('show'); }, 3500);
+  }
+</script>
+</body>
+</html>
