@@ -48,7 +48,11 @@ button{
 }
 label{display:block;margin:8px}
 .hidden{display:none}
-.logout-btn{background:linear-gradient(45deg,#ff4d4d,#ff0000);color:white}
+.logout-btn{
+  background:linear-gradient(45deg,#ff4d4d,#ff0000);
+  color:white
+}
+#statusMsg{text-align:center;margin-top:10px}
 </style>
 </head>
 
@@ -73,16 +77,17 @@ label{display:block;margin:8px}
   <h3>⚙️ System Controls</h3>
 
   <h4>Tools</h4>
-  <label><input type="checkbox" id="tDuplicate"> Duplicate Check</label>
-  <label><input type="checkbox" id="tTime"> Time Recorder</label>
-  <label><input type="checkbox" id="tLate"> Late Detection</label>
-  <label><input type="checkbox" id="tBlock"> Block After Cutoff</label>
-  <label>Late Time <input type="time" id="lateTime"></label>
+  <label><input type="checkbox" id="SCANNER_ACTIVE"> Scanner Active</label>
+  <label><input type="checkbox" id="DUPLICATE_BLOCK"> Duplicate Block</label>
+  <label><input type="checkbox" id="TIME_RECORDER"> Time Recorder</label>
+  <label><input type="checkbox" id="LATE_DETECTION"> Late Detection</label>
+  <label><input type="checkbox" id="BLOCK_AFTER"> Block After Cutoff</label>
+  <label>Late Time <input type="time" id="LATE_TIME"></label>
 
   <h4>Messaging</h4>
-  <label><input type="checkbox" id="tParentMsg"> Parent Message</label>
-  <label><input type="checkbox" id="tAdviserMsg"> Adviser Report</label>
-  <label><input type="checkbox" id="tMockMsg"> Mock Mode</label>
+  <label><input type="checkbox" id="PARENT_SMS"> Parent SMS</label>
+  <label><input type="checkbox" id="ADVISER_EMAIL"> Adviser Email</label>
+  <label><input type="checkbox" id="MOCK_MODE"> Mock Mode</label>
 
   <button onclick="saveSettings()">💾 Save & Sync</button>
   <button onclick="clearLogs()">🗑 Clear Logs</button>
@@ -96,23 +101,28 @@ label{display:block;margin:8px}
 /* ===============================
    CONFIG
 ================================ */
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxx4Ml3adiJ9BETJitCtuPo_wc4Qxgn59vp3XMuZBLy4CCBbw8IqDTF-dYtQr10t_r4og/exec";
+const WEB_APP_URL =
+"https://script.google.com/macros/s/AKfycbxx4Ml3adiJ9BETJitCtuPo_wc4Qxgn59vp3XMuZBLy4CCBbw8IqDTF-dYtQr10t_r4og/exec";
 
 /* ===============================
-   ADMINS
+   LOGIN (SERVER SIDE)
 ================================ */
-const ADMINS=[
-  {user:"admin",pass:"PNBARC@DE"},
-  {user:"principal",pass:"PNB2026"},
-  {user:"itadmin",pass:"IT@PNB"}
-];
+async function login(){
+  loginMsg.innerText="";
 
-/* ===============================
-   LOGIN
-================================ */
-function login(){
-  const u=username.value,p=password.value;
-  if(ADMINS.find(a=>a.user===u&&a.pass===p)){
+  const res = await fetch(WEB_APP_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      action:"login",
+      username: username.value,
+      password: password.value
+    })
+  });
+
+  const r = await res.json();
+
+  if(r.success){
     loginView.classList.add("hidden");
     adminView.classList.remove("hidden");
     loadSettings();
@@ -120,64 +130,69 @@ function login(){
     loginMsg.innerText="❌ Invalid login";
   }
 }
-function logout(){location.reload();}
+
+function logout(){
+  fetch(WEB_APP_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ action:"logout" })
+  }).finally(()=>location.reload());
+}
 
 /* ===============================
    LOAD SETTINGS (FROM SHEET)
 ================================ */
 async function loadSettings(){
-  const r=await fetch(WEB_APP_URL+"?mode=settings");
-  const s=await r.json();
+  const r = await fetch(WEB_APP_URL + "?mode=settings");
+  const s = await r.json();
 
-  tDuplicate.checked=s.duplicate;
-  tTime.checked=s.time;
-  tLate.checked=s.late;
-  tBlock.checked=s.block;
-  lateTime.value=s.lateTime;
-  tParentMsg.checked=s.parentMsg;
-  tAdviserMsg.checked=s.adviserMsg;
-  tMockMsg.checked=s.mockMsg;
+  for(const k in s){
+    const el = document.getElementById(k);
+    if(!el) continue;
+    if(el.type==="checkbox") el.checked = s[k]===true;
+    else el.value = s[k];
+  }
 }
 
 /* ===============================
-   SAVE SETTINGS (TO SHEET)
+   SAVE SETTINGS
 ================================ */
-function saveSettings(){
-  const settings={
-    duplicate:tDuplicate.checked,
-    time:tTime.checked,
-    late:tLate.checked,
-    block:tBlock.checked,
-    lateTime:lateTime.value,
-    parentMsg:tParentMsg.checked,
-    adviserMsg:tAdviserMsg.checked,
-    mockMsg:tMockMsg.checked
-  };
+async function saveSettings(){
 
-  fetch(WEB_APP_URL,{
+  const data = {};
+  document.querySelectorAll("input").forEach(i=>{
+    if(i.type==="checkbox") data[i.id]=i.checked;
+    else data[i.id]=i.value;
+  });
+
+  const r = await fetch(WEB_APP_URL,{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({
       action:"updateSettings",
-      settings:settings
+      settings:data
     })
   });
 
-  statusMsg.innerText="✅ Settings synced system-wide";
+  const res = await r.json();
+  statusMsg.innerText = res.success
+    ? "✅ Settings synced system-wide"
+    : "❌ Update failed";
 }
 
 /* ===============================
    CLEAR LOGS
 ================================ */
-function clearLogs(){
-  if(confirm("Clear all logs?")){
-    fetch(WEB_APP_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action:"clearLogs"})
-    });
-    statusMsg.innerText="🗑 Logs cleared";
-  }
+async function clearLogs(){
+  if(!confirm("Clear all admin logs?")) return;
+
+  await fetch(WEB_APP_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ action:"clearAdminLogs" })
+  });
+
+  statusMsg.innerText="🗑 Logs cleared";
 }
 </script>
 
