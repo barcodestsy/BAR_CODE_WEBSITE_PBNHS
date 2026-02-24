@@ -48,28 +48,34 @@ body{
 /* ===============================
    CONFIG
 ================================ */
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxx4Ml3adiJ9BETJitCtuPo_wc4Qxgn59vp3XMuZBLy4CCBbw8IqDTF-dYtQr10t_r4og/exec";
+const WEB_APP_URL =
+"https://script.google.com/macros/s/AKfycbxx4Ml3adiJ9BETJitCtuPo_wc4Qxgn59vp3XMuZBLy4CCBbw8IqDTF-dYtQr10t_r4og/exec";
 
 /* ===============================
    GLOBALS
 ================================ */
 const statusDiv = document.getElementById("status");
 const beep = document.getElementById("beep");
-let scanner;
-let settings = {};
+let scanner = null;
+let system = {};
+let busy = false;
 
 /* ===============================
-   LOAD SETTINGS (FROM ADMIN)
+   LOAD SYSTEM STATUS (ADMIN)
 ================================ */
-async function loadSettings(){
+async function loadSystem(){
   try{
-    const r = await fetch(WEB_APP_URL + "?mode=settings");
-    settings = await r.json();
+    const r = await fetch(WEB_APP_URL + "?mode=status");
+    system = await r.json();
+
+    if(system.SCANNER_ACTIVE === false){
+      statusDiv.innerHTML = "⛔ Scanner disabled by admin";
+      return;
+    }
   }catch(e){
-    console.error("Settings load failed", e);
+    statusDiv.innerHTML = "⚠️ Cannot connect to server";
   }
 }
-loadSettings();
 
 /* ===============================
    TIME UTILS
@@ -79,14 +85,13 @@ function getNow(){
   return {
     date: n.toLocaleDateString(),
     time: n.toLocaleTimeString(),
-    iso: n.toISOString(),
     hour: n.getHours(),
     minute: n.getMinutes()
   };
 }
 function isLate(t){
-  if(!settings.late) return false;
-  const [h,m] = settings.lateTime.split(":").map(Number);
+  if(!system.LATE_DETECTION) return false;
+  const [h,m] = system.LATE_TIME.split(":").map(Number);
   return t.hour > h || (t.hour === h && t.minute > m);
 }
 
@@ -94,6 +99,9 @@ function isLate(t){
    SCAN SUCCESS
 ================================ */
 async function onScanSuccess(decodedText){
+  if(busy) return;
+  busy = true;
+
   beep.play();
 
   const lrn = decodedText.trim();
@@ -110,21 +118,34 @@ async function onScanSuccess(decodedText){
   `;
 
   /* SEND TO GOOGLE SHEET */
-  fetch(WEB_APP_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      action:"log",
-      lrn:lrn,
-      date:t.date,
-      time:t.time,
-      status: late ? "Late" : "On Time",
-      settings: settings
-    })
-  }).catch(err=>console.error(err));
+  try{
+    const res = await fetch(WEB_APP_URL,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        action:"scan",
+        lrn: lrn,
+        date: t.date,
+        time: t.time,
+        status: late ? "Late" : "On Time"
+      })
+    });
+
+    const r = await res.json();
+
+    if(!r.success){
+      statusDiv.innerHTML = "⚠️ " + r.message;
+    }
+
+  }catch(err){
+    statusDiv.innerHTML = "❌ Server error";
+  }
 
   scanner.clear();
-  setTimeout(startScanner, 2000);
+  setTimeout(()=>{
+    busy = false;
+    startScanner();
+  },2000);
 }
 
 /* ===============================
@@ -133,12 +154,25 @@ async function onScanSuccess(decodedText){
 function startScanner(){
   scanner = new Html5QrcodeScanner(
     "reader",
-    { fps:10, qrbox:{width:250,height:120}, rememberLastUsedCamera:true },
+    {
+      fps:10,
+      qrbox:{ width:250, height:120 },
+      rememberLastUsedCamera:true
+    },
     false
   );
   scanner.render(onScanSuccess);
 }
-startScanner();
+
+/* ===============================
+   INIT
+================================ */
+(async ()=>{
+  await loadSystem();
+  if(system.SCANNER_ACTIVE !== false){
+    startScanner();
+  }
+})();
 </script>
 
 </body>
