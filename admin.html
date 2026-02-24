@@ -105,32 +105,51 @@ const WEB_APP_URL =
 "https://script.google.com/macros/s/AKfycbxx4Ml3adiJ9BETJitCtuPo_wc4Qxgn59vp3XMuZBLy4CCBbw8IqDTF-dYtQr10t_r4og/exec";
 
 /* ===============================
-   LOGIN (SERVER SIDE)
+   GET ELEMENTS (IMPORTANT FIX)
+================================ */
+const username = document.getElementById("username");
+const password = document.getElementById("password");
+const loginMsg = document.getElementById("loginMsg");
+const loginView = document.getElementById("loginView");
+const adminView = document.getElementById("adminView");
+const statusMsg = document.getElementById("statusMsg");
+
+/* ===============================
+   LOGIN
 ================================ */
 async function login(){
-  loginMsg.innerText="";
+  loginMsg.innerText="Checking...";
 
-  const res = await fetch(WEB_APP_URL,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      action:"login",
-      username: username.value,
-      password: password.value
-    })
-  });
+  try{
+    const res = await fetch(WEB_APP_URL,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        action:"login",
+        username: username.value.trim(),
+        password: password.value.trim()
+      })
+    });
 
-  const r = await res.json();
+    const r = await res.json();
 
-  if(r.success){
-    loginView.classList.add("hidden");
-    adminView.classList.remove("hidden");
-    loadSettings();
-  }else{
-    loginMsg.innerText="❌ Invalid login";
+    if(r.success){
+      loginView.classList.add("hidden");
+      adminView.classList.remove("hidden");
+      loadSettings();
+    }else{
+      loginMsg.innerText="❌ Invalid login";
+    }
+
+  }catch(err){
+    loginMsg.innerText="❌ Server not reachable";
+    console.error(err);
   }
 }
 
+/* ===============================
+   LOGOUT
+================================ */
 function logout(){
   fetch(WEB_APP_URL,{
     method:"POST",
@@ -140,7 +159,7 @@ function logout(){
 }
 
 /* ===============================
-   LOAD SETTINGS (FROM SHEET)
+   LOAD SETTINGS
 ================================ */
 async function loadSettings(){
   const r = await fetch(WEB_APP_URL + "?mode=settings");
@@ -158,9 +177,9 @@ async function loadSettings(){
    SAVE SETTINGS
 ================================ */
 async function saveSettings(){
-
   const data = {};
-  document.querySelectorAll("input").forEach(i=>{
+
+  document.querySelectorAll("#adminView input").forEach(i=>{
     if(i.type==="checkbox") data[i.id]=i.checked;
     else data[i.id]=i.value;
   });
@@ -175,6 +194,7 @@ async function saveSettings(){
   });
 
   const res = await r.json();
+
   statusMsg.innerText = res.success
     ? "✅ Settings synced system-wide"
     : "❌ Update failed";
